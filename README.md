@@ -1,254 +1,166 @@
-# Technestia
+<div align="center">
 
-Technestia is a full-stack collaboration platform for builders to create projects, form teams, track milestones, discuss work in real-time chat, and maintain activity/notification streams.
+# 🚀 Technestia
 
-This repository uses Next.js App Router + Prisma + PostgreSQL + Socket.IO with a custom Node server.
+### Modern Developer Collaboration Platform
 
-## Tech Stack
+Plan • Collaborate • Build • Ship
 
-- Frontend: Next.js 15, React 19, TypeScript, Tailwind CSS, Radix UI, SWR
-- Backend: Next.js Route Handlers, custom Node HTTP server
-- Database: PostgreSQL + Prisma ORM
-- Auth: NextAuth (Credentials + Google + GitHub)
-- Realtime: Socket.IO
-- Media: Cloudinary
-- Email: Resend
+<p align="center">
+  <a href="https://technestia.onrender.com">
+    <img src="https://img.shields.io/badge/🌐_Live_Demo-Visit_Now-blue?style=for-the-badge" />
+  </a>
 
-## Core Workflows (What Is Implemented)
+  <a href="https://github.com/Bhivanshu45/technestia">
+    <img src="https://img.shields.io/badge/GitHub-Repository-black?style=for-the-badge&logo=github" />
+  </a>
+</p>
 
-### 1. Authentication and Account Lifecycle
+</div>
 
-- Sign up with email/OTP verification
-- Sign in via credentials or OAuth (Google/GitHub)
-- Forgot/reset password flow
-- Session/JWT via NextAuth callbacks
+---
 
-Primary backend files:
+# 🌟 Overview
 
-- `src/app/api/auth/sign-up/route.ts`
-- `src/app/api/auth/verify-otp/route.ts`
-- `src/app/api/auth/forgot-password/route.ts`
-- `src/app/api/auth/reset-password/route.ts`
-- `src/app/api/auth/[...nextauth]/options.ts`
+Technestia is a modern **Developer Collaboration Platform** that enables software teams to build projects collaboratively through real-time communication, milestone tracking, collaboration management, activity monitoring, and integrated productivity tools.
 
-### 2. Profile System
+Designed using modern full-stack technologies, Technestia provides an intuitive workspace where developers can manage projects, invite collaborators, communicate instantly, and monitor project progress from a unified dashboard.
 
-- Public profile by username
-- Own profile edit (bio/social links/image)
-- Password update/set-password flow
-- Account deletion
+---
 
-Primary files:
+# 🎥 Live Demo
 
-- `src/app/api/profile/**`
-- `src/app/(dashboard)/profile/**`
+🌐 **Live Application**
 
-### 3. Project Management
+https://technestia.onrender.com/
 
-- Create project with metadata (title, description, tech stack, tags)
-- Public/private project visibility
-- Update general/settings/social/screenshots
-- Delete project
+---
 
-Primary files:
+# 📸 Screenshots
 
-- `src/app/api/project/create/route.ts`
-- `src/app/api/project/update/**`
-- `src/app/api/project/delete/[projectId]/route.ts`
-- `src/app/(dashboard)/projects/**`
-- `src/app/project/[id]/page.tsx`
+> Replace these with your screenshots.
 
-### 4. Collaboration Model
+## Dashboard
 
-- Join request flow (request -> accept/reject)
-- Invite flow (invite -> accept/decline/cancel)
-- Access levels: `LIMITED`, `FULL`
-- Remove collaborator / leave project
-- My invites and my requests pages/hooks
+![Dashboard](./screenshots/dashboard.png)
 
-Primary files:
+---
 
-- `src/app/api/project/*collab*`
-- `src/app/api/project/invites/my/route.ts`
-- `src/app/api/project/requests/my/route.ts`
-- `src/app/(dashboard)/collaborations/**`
+## Project Details
 
-### 5. Milestone Lifecycle
+![Project](./screenshots/project.png)
 
-- Milestone CRUD (create, edit, delete)
-- Completion status updates (`NOT_STARTED`, `IN_PROGRESS`, `COMPLETED`, `SKIPPED`)
-- Approval workflow for status updates (`PENDING` -> `APPROVED`/`REJECTED`)
-- Proof URL and milestone visibility flags
+---
 
-Primary files:
+## Collaboration
 
-- `src/app/api/project/milestones/**`
-- `src/components/projects/tabs/ProjectMilestonesTab.tsx`
+![Collaboration](./screenshots/collaboration.png)
 
-### 6. Feedback and Reactions
+---
 
-- Project feedback create/list/update/delete
-- Optional rating + feedback content
-- Reaction system (LIKE/LOVE/LAUGH/WOW/SAD/ANGRY)
+## Real-Time Chat
 
-Primary files:
+![Chat](./screenshots/chat.png)
 
-- `src/app/api/project/feedbacks/**`
-- `src/app/api/project/feedback-reaction/**`
-- `src/components/projects/tabs/ProjectFeedbacksTab.tsx`
+---
 
-### 7. Activity and Notifications
+## Notifications
 
-- Centralized activity logging helper for project actions
-- Notification persistence per user
-- Mark-one and mark-all read flows
-- Realtime updates for new activity and notifications
+![Notifications](./screenshots/notifications.png)
 
-Primary files:
+---
 
-- `src/lib/activityNotificationRealtime.ts`
-- `src/app/api/notifications/my/route.ts`
-- `src/app/api/notifications/read/[notificationId]/route.ts`
-- `src/app/api/notifications/read-all/route.ts`
-- `src/hooks/useActivityFeed.ts`
-- `src/hooks/useNotifications.ts`
-- `src/app/(dashboard)/activity/**`
+# ✨ Key Features
 
-### 8. Realtime Chat
+✅ Authentication & OAuth
 
-- DM + group chat rooms
-- Project team chat button from project detail
-- Message send/edit/delete, mark-as-read, unread counters
-- Participant add/remove/leave
-- Presence/typing/seen indicators
+✅ Project Management
 
-Primary files:
+✅ Team Collaboration
 
-- `server.js`
-- `src/app/api/chat/**`
-- `src/hooks/useChat*.ts`
-- `src/app/(dashboard)/chat/**`
+✅ Milestone Tracking
 
-### 9. Search
+✅ Real-Time Chat
 
-- Project, milestone, and user search endpoints
-- Frontend search experiences across dashboard/public areas
+✅ Notifications
 
-Primary files:
+✅ Activity Timeline
 
-- `src/app/api/search/projects/route.ts`
-- `src/app/api/search/milestones/route.ts`
-- `src/app/api/search/users/route.ts`
+✅ Feedback System
 
-## Realtime Event Map
+✅ Smart Search
 
-Server/user channels use `user:{id}` rooms and chat channels use `chat:{roomId}`.
+✅ Responsive UI
 
-- `activity:new`: pushes newly created activity item
-- `notification:new`: pushes new notification row
-- `notification:read-sync`: sync read state across tabs/devices
-- `collab:sync`: sync collaboration request/invite lifecycle changes
-- `chat:room:sync`: update room-level unread/latest message state
-- `chat:message:new`, `chat:message:edit`, `chat:message:delete`
-- `chat:typing:start`, `chat:typing:stop`
-- `chat:message:seen`
-- `chat:presence:state`
+---
 
-## Architecture Notes
+# ⚡ Tech Stack
 
-- Custom server (`server.js`) hosts Next handler and Socket.IO on same port.
-- Route handlers implement domain mutations; frontend consumes via SWR hooks.
-- Activity + notification creation is centralized to avoid drift across routes.
-- Notifications use SWR cache as source-of-truth for multi-tab consistency.
+| Category | Technology |
+|-----------|------------|
+| Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS |
+| Backend | Node.js, Next.js Route Handlers |
+| Database | PostgreSQL + Prisma |
+| Authentication | NextAuth |
+| Realtime | Socket.IO |
+| Media | Cloudinary |
+| Email | Resend |
 
-## Local Setup
+---
 
-### Prerequisites
+# 🏗️ System Architecture
 
-- Node.js 18+
-- PostgreSQL
-
-### Install
-
-```bash
-npm install
+```text
+                 Next.js Frontend
+                        │
+                        │
+             Next.js Route Handlers
+                        │
+        ┌───────────────┴───────────────┐
+        │                               │
+ PostgreSQL + Prisma              Socket.IO Server
+        │                               │
+        └───────────────┬───────────────┘
+                        │
+                 Connected Clients
 ```
 
-### Database
+---
 
-```bash
-npx prisma migrate dev
-```
+# 🚀 Upcoming Features
 
-### Run
+- 🤖 AI Milestone Generator
+- 🤖 AI Project Health Analysis
+- 🤖 AI Feedback Summary
+- 🤖 AI Sprint Planner
+- Redis Caching
+- BullMQ Background Jobs
+- Docker Support
+- Elasticsearch
+- Monitoring Dashboard
 
-```bash
-npm run dev
-```
+---
 
-This starts the custom server (`node server.js`) with Next.js + Socket.IO.
+# 🤝 Contributing
 
-## Environment Variables
+Contributions are always welcome.
 
-Required/used variables discovered from code:
+Fork the repository
 
-```bash
-# Database
-DATABASE_URL=
+Create a feature branch
 
-# Auth
-NEXTAUTH_SECRET=
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-GITHUB_CLIENT_ID=
-GITHUB_CLIENT_SECRET=
+Commit your changes
 
-# URLs
-NEXT_PUBLIC_SOCKET_URL=http://localhost:3000
-SOCKET_CORS_ORIGIN=http://localhost:3000
-NEXT_PUBLIC_API_BASE_URL=
-RESET_PASSWORD_PAGE_URL=
+Push the branch
 
-# Cloudinary
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
-FOLDER_NAME=
+Create a Pull Request
 
-# Email
-RESEND_API_KEY=
-```
+---
 
-## Scripts
+<div align="center">
 
-```bash
-npm run dev
-npm run build
-npm run start
-npm run lint
-```
+⭐ If you found this project useful, consider giving it a star.
 
-## Verified Gaps / Incomplete Areas
+Made with ❤️ by Shivanshu Pandey
 
-These are current platform gaps to prioritize before claiming production hardening:
-
-1. Milestone assignment model is not implemented yet.
-
-- No assignee relation/field in Prisma milestone model.
-
-2. Search pagination/count maturity is limited.
-
-- Search endpoints exist, but production-grade pagination/metadata needs improvement.
-
-3. No automated test suite coverage baseline in repo.
-
-- Critical flows should be covered with integration/E2E tests.
-
-4. No API rate-limiting layer.
-
-- Public/high-frequency endpoints need throttling protection.
-
-5. No centralized observability setup.
-
-- Structured logs/metrics/tracing are not yet integrated.
-
+</div>
