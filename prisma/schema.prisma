@@ -1,0 +1,264 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    Int                @id @default(autoincrement())
+  name                  String
+  email                 String             @unique
+  username              String             @unique
+  password              String
+  image                 String?
+  imagePublicId         String?
+  bio                   String?
+  role                  Role               @default(USER)
+  isVerified            Boolean            @default(false)
+  verifyCode            String?
+  verifyCodeExpiry      DateTime?
+  lastOtpRequestedAt    DateTime?
+  resetPasswordToken    String?
+  resetTokenExpiry      DateTime?
+  githubUrl             String?
+  linkedinUrl           String?
+  websiteUrl            String?
+  achievementPoints     Int                @default(0)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  activityLogs          ActivityLog[]
+  chatMessages          ChatMessage[]
+  chatParticipations    ChatParticipant[]
+  invitedCollaborations Collaboration[]    @relation("InviteSender")
+  collaborations        Collaboration[]
+  feedbacks             Feedback[]
+  feedbackReactions     FeedbackReaction[]
+  milestonesCreated     Milestone[]
+  notifications         Notification[]
+  projects              Project[]
+}
+
+model Project {
+  id             Int             @id @default(autoincrement())
+  title          String
+  description    String
+  techStack      String[]
+  tags           String[]
+  status         ProjectStatus   @default(IDEA)
+  isPublic       Boolean         @default(false)
+  githubUrl      String?
+  liveDemoUrl    String?
+  screenshots    String[]
+  uploadedAt     DateTime        @default(now())
+  lastUpdatedAt  DateTime        @updatedAt
+  userId         Int
+  activityLogs   ActivityLog[]
+  chatRooms      ChatRoom[]
+  collaborations Collaboration[]
+  feedbacks      Feedback[]
+  milestones     Milestone[]
+  user           User            @relation(fields: [userId], references: [id])
+}
+
+model Collaboration {
+  id            Int                 @id @default(autoincrement())
+  projectId     Int
+  userId        Int
+  status        CollaborationStatus @default(PENDING)
+  accessLevel   AccessLevel         @default(LIMITED)
+  createdAt     DateTime            @default(now())
+  lastUpdatedAt DateTime            @updatedAt
+  invitedBy     Int?
+  inviter       User?               @relation("InviteSender", fields: [invitedBy], references: [id])
+  project       Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Milestone {
+  id               Int                 @id @default(autoincrement())
+  title            String
+  description      String
+  projectId        Int
+  createdById      Int
+  completionStatus CompletionStatus    @default(NOT_STARTED)
+  proofUrl         String?
+  isPublic         Boolean             @default(false)
+  createdAt        DateTime            @default(now())
+  lastUpdatedAt    DateTime            @updatedAt
+  updateRequest    UpdateRequestStatus @default(NO_REQUEST)
+  createdBy        User                @relation(fields: [createdById], references: [id])
+  project          Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Feedback {
+  id            Int                @id @default(autoincrement())
+  content       String
+  rating        Int?
+  projectId     Int
+  createdById   Int
+  createdAt     DateTime           @default(now())
+  lastUpdatedAt DateTime           @updatedAt
+  createdBy     User               @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  project       Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reactions     FeedbackReaction[]
+}
+
+model FeedbackReaction {
+  id         Int          @id @default(autoincrement())
+  type       ReactionType
+  userId     Int
+  feedbackId Int
+  createdAt  DateTime     @default(now())
+  feedback   Feedback     @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([feedbackId, userId])
+}
+
+model ActivityLog {
+  id          Int          @id @default(autoincrement())
+  projectId   Int
+  userId      Int
+  actionType  ActivityType
+  description String?
+  targetId    Int?
+  targetType  String?
+  createdAt   DateTime     @default(now())
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id         Int              @id @default(autoincrement())
+  userId     Int
+  type       NotificationType
+  message    String
+  isRead     Boolean          @default(false)
+  targetId   Int?
+  targetType String?
+  createdAt  DateTime         @default(now())
+  user       User             @relation(fields: [userId], references: [id])
+}
+
+model ChatRoom {
+  id            Int               @id @default(autoincrement())
+  projectId     Int?
+  isGroup       Boolean           @default(false)
+  name          String?
+  image         String?
+  createdAt     DateTime          @default(now())
+  lastMessageAt DateTime          @default(now())
+  imagePublicId String?
+  messages      ChatMessage[]
+  participants  ChatParticipant[]
+  project       Project?          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model ChatParticipant {
+  id         Int       @id @default(autoincrement())
+  chatRoomId Int
+  userId     Int
+  joinedAt   DateTime  @default(now())
+  hasLeft    Boolean   @default(false)
+  lastSeenAt DateTime?
+  isAdmin    Boolean   @default(false)
+  chatRoom   ChatRoom  @relation(fields: [chatRoomId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
+
+  @@unique([chatRoomId, userId])
+}
+
+model ChatMessage {
+  id                 Int         @id @default(autoincrement())
+  chatRoomId         Int
+  senderId           Int
+  message            String
+  messageType        MessageType @default(TEXT)
+  isEdited           Boolean     @default(false)
+  isDeleted          Boolean     @default(false)
+  createdAt          DateTime    @default(now())
+  cloudinaryPublicId String?
+  chatRoom           ChatRoom    @relation(fields: [chatRoomId], references: [id])
+  sender             User        @relation(fields: [senderId], references: [id])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ProjectStatus {
+  IDEA
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum CollaborationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum AccessLevel {
+  LIMITED
+  FULL
+}
+
+enum UpdateRequestStatus {
+  NO_REQUEST
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CompletionStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
+enum ReactionType {
+  LIKE
+  LOVE
+  LAUGH
+  WOW
+  SAD
+  ANGRY
+}
+
+enum ActivityType {
+  CREATE_MILESTONE
+  UPDATE_MILESTONE
+  DELETE_MILESTONE
+  CREATE_FEEDBACK
+  REACT_FEEDBACK
+  REQUEST_COLLABORATION
+  APPROVE_COLLABORATION
+  POST_PROJECT
+  UPDATE_PROJECT
+  DELETE_PROJECT
+  REJECT_COLLABORATION
+  LEAVE_PROJECT
+  REMOVED_FORM_PROJECT
+}
+
+enum NotificationType {
+  COLLABORATION_REQUEST
+  COLLABORATION_APPROVED
+  MILESTONE_APPROVED
+  MILESTONE_REJECTED
+  NEW_FEEDBACK
+  FEEDBACK_REACTION
+  GENERAL
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  LINK
+}

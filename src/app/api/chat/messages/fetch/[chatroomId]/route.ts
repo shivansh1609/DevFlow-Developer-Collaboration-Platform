@@ -1,0 +1,150 @@
+import { getServerSession } from "next-auth";
+import { NextResponse } from "next/server";
+import { authOptions } from "@/app/api/auth/[...nextauth]/options";
+import { prisma } from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rateLimit";
+import logger from "@/lib/logger";
+
+// GET /api/chat/messages/[chatroomId]?cursor=<lastMessageId>&limit=20
+export async function GET(
+  req: Request,
+  context: { params: { chatroomId: string } },
+) {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user || !session.user?.id) {
+    return NextResponse.json(
+      { success: false, message: "Unauthorized" },
+      { status: 401 },
+    );
+  }
+
+  const userId = Number(session.user.id);
+  const { chatroomId } = await context.params;
+  const chatroomIdNumber = Number(chatroomId);
+  const { searchParams } = new URL(req.url);
+  const cursor = searchParams.get("cursor");
+  const limitParam = searchParams.get("limit");
+  const limit = Math.min(Number(limitParam) || 20, 50);
+
+  if (!chatroomIdNumber || isNaN(chatroomIdNumber)) {
+    return NextResponse.json(
+      { success: false, message: "Invalid chatroom ID" },
+      { status: 400 },
+    );
+  }
+
+  // check rate limiting
+  const key = `fetch-messages:${userId}:${chatroomIdNumber}`;
+  const rateLimitRes = await checkRateLimit(key);
+  if (!rateLimitRes.success) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Too many requests. Please try again later.",
+      },
+      { status: 429 },
+    );
+  }
+
+  try {
+    logger.info("chat.messages.fetch.request_received");
+    // verify chatroom exists
+    const chatRoom = await prisma.chatRoom.findUnique({
+      where: { id: chatroomIdNumber },
+    });
+
+    if (!chatRoom) {
+      return NextResponse.json(
+        { success: false, message: "Chat room not found" },
+        { status: 404 },
+      );
+    }
+
+    // Verify user is a participant
+    const participant = await prisma.chatParticipant.findFirst({
+      where: { chatRoomId: chatroomIdNumber, userId, hasLeft: false },
+    });
+
+    if (!participant) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "You are not a participant in this chatroom",
+        },
+        { status: 403 },
+      );
+    }
+
+    const lastSeenAt = participant.lastSeenAt ?? new Date(0);
+
+    const messages = await prisma.chatMessage.findMany({
+      where: {
+        chatRoomId: chatroomIdNumber,
+      },
+      take: limit + 1,
+      orderBy: { createdAt: "desc" },
+      ...(cursor && {
+        cursor: { id: Number(cursor) },
+        skip: 1,
+      }),
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+      },
+    });
+
+    const hasNextPage = messages.length > limit;
+    const trimmedMessages = hasNextPage ? messages.slice(0, limit) : messages;
+    const nextCursor = hasNextPage
+      ? String(trimmedMessages[trimmedMessages.length - 1].id)
+      : null;
+
+    // === 🟡 UNREAD INFO ===
+
+    const unreadCount = await prisma.chatMessage.count({
+      where: {
+        chatRoomId: chatroomIdNumber,
+        createdAt: { gt: lastSeenAt },
+        senderId: { not: userId },
+      },
+    });
+
+    const firstUnread = await prisma.chatMessage.findFirst({
+      where: {
+        chatRoomId: chatroomIdNumber,
+        createdAt: { gt: lastSeenAt },
+        senderId: { not: userId },
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    return NextResponse.json(
+      {
+        success: true,
+        messages: trimmedMessages,
+        nextCursor,
+        unreadInfo: {
+          unreadCount,
+          firstUnreadMessageId: firstUnread?.id ?? null,
+        },
+      },
+      { status: 200 },
+    );
+  } catch (error) {
+    logger.error("[FETCH_MESSAGES_ERROR]", error);
+    return NextResponse.json(
+      { success: false, message: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}
