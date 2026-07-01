@@ -2,7 +2,7 @@
 
 # 🚀 Technestia
 
-### Modern Developer Collaboration Platform
+###  Modern Developer Collaboration Platform
 
 Build • Collaborate • Innovate
 
