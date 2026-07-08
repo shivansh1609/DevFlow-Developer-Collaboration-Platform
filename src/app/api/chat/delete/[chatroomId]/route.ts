@@ -95,7 +95,7 @@ export async function DELETE(
     logger.error("[DELETE_CHATROOM_ERROR]", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
-      { status: 404 }
+      { status: 500 }
     );
   }
 }	
