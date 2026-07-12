@@ -20,7 +20,7 @@ app.prepare().then(() => {
         process.env.RENDER_EXTERNAL_URL ||
         process.env.NEXT_PUBLIC_SOCKET_URL ||
         "http://localhost:3000",
-      credentials: true 
+      credentials: false
     },
   });
 
